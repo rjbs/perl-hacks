@@ -1,0 +1,50 @@
+use v5.14.0;
+use Scalar::Util qw(blessed reftype);
+
+use Test::More;
+
+package Insane {
+  use overload qr => sub { qr<abc> },
+               fallback => 1;
+};
+
+my $code = q[
+  my $wtf = qr{bcd};
+  bless $wtf, 'Insane';
+
+  say "blessed: ", blessed $wtf;
+  say "reftype: ", reftype $wtf;
+  say "stringy: ", $wtf;
+
+  diag '=~ $wtf';
+  say 'abc'  =~ $wtf     ? 1 : 0;
+  say 'bcd'  =~ $wtf     ? 1 : 0;
+
+  diag '=~ /$wtf/';
+  say 'abc'  =~ /$wtf/   ? 1 : 0;
+  say 'bcd'  =~ /$wtf/   ? 1 : 0;
+
+  diag '=~ /x$wtf/';
+  say 'xabc' =~ /x$wtf/  ? 1 : 0;
+  say 'xbcd' =~ /x$wtf/  ? 1 : 0;
+
+  diag '=~ qr/$wtf/';
+  say 'abc'  =~ qr/$wtf/ ? 1 : 0;
+  say 'bcd'  =~ qr/$wtf/ ? 1 : 0;
+
+  diag '=~ "$wtf"';
+  say 'abc'  =~ "$wtf"   ? 1 : 0;
+  say 'bcd'  =~ "$wtf"   ? 1 : 0;
+];
+
+for my $no_overloading (0, 1) {
+  my $copy = $code;
+  $copy = "no overloading; $code" if $no_overloading;
+
+  diag $no_overloading ? 'no overloading' : 'overloading';
+  eval $copy;
+}
+
+
+ok(1);
+done_testing;
